@@ -1,6 +1,6 @@
 # ✨ YumeWeaver ✨
 
-一个为自定义galgame打造的可爱视觉化剧本编辑器~ 这是一个基于大语言模型（LLM）互动游戏的剧本创作工具，你可以通过超直观的视觉界面来创作和定制属于你的游戏剧本哦！(≧◡≦)
+一个为自定义galgame打造的可爱视觉化剧本编辑器, 目前正在开发中~ 这是一个基于大语言模型（LLM）互动游戏的剧本创作工具，你可以通过超直观的视觉界面来创作和定制属于你的游戏剧本哦！(≧◡≦)
 
 ## 🌟 特色功能
 
@@ -23,11 +23,11 @@ https://github.com/user-attachments/assets/d6c95e72-8755-44ae-8f2b-246a59a5d936
 ## 📥 安装指南
 
 ### 下载发行版
-从 [Releases](../../releases) 或者 https://github.com/Ratman463/LingChat-ScriptEditor/releases 页面下载最新版本~
+https://github.com/Ratman463/YumeWeaver/releases
 
 ### 运行应用
 1. 解压下载的压缩包（或者通过安装程序安装）
-2. 运行 `LingChat Script Editor.exe`
+2. 运行 `YumeWeaver.exe`
 3. 开始创作！
 
 ## 🛠️ 开发设置
@@ -42,8 +42,8 @@ https://github.com/user-attachments/assets/d6c95e72-8755-44ae-8f2b-246a59a5d936
 
 1. **克隆仓库**
    ```bash
-   git clone https://github.com/your-username/LingChat-ScriptEditor.git
-   cd LingChat-ScriptEditor
+   git clone https://github.com/Ratman463/YumeWeaver.git
+   cd YumeWeaver
    ```
 
 2. **安装依赖**
@@ -63,7 +63,7 @@ https://github.com/user-attachments/assets/d6c95e72-8755-44ae-8f2b-246a59a5d936
 ## 📁 项目结构
 
 ```
-LingChat-ScriptEditor/
+YumeWeaver/
 ├── frontend/                    # Vue.js + Electron 前端
 │   ├── src/
 │   │   ├── components/          # Vue 组件
@@ -174,7 +174,7 @@ events:
 2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
 3. 提交修改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
+5. 开启 Pull Request
 
 ## 📄 许可证
 
