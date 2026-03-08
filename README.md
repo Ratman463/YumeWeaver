@@ -1,8 +1,6 @@
-# ✨ LingChat剧本编辑器 ✨
+# ✨ YumeWeaver ✨
 
-<img width="256" height="256" alt="image" src="https://github.com/user-attachments/assets/efdf4560-ff78-4dc9-b5e5-914a381f3549" />
-
-一个为 LingChat 打造的可爱视觉化剧本编辑器~ 这是一个基于大语言模型（LLM）互动游戏的剧本创作工具，你可以通过超直观的视觉界面来创作和定制属于你的游戏剧本哦！(≧◡≦)
+一个为自定义galgame打造的可爱视觉化剧本编辑器~ 这是一个基于大语言模型（LLM）互动游戏的剧本创作工具，你可以通过超直观的视觉界面来创作和定制属于你的游戏剧本哦！(≧◡≦)
 
 ## 🌟 特色功能
 
@@ -16,12 +14,7 @@
 
 ## 📸 运行展示
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/60512255-efb1-4266-bb84-221c93a151a0" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/be048615-1f7e-48b0-a0f7-ae65d3800efd" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/76ec22cd-f17a-43d5-85dc-505cd59a5a91" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/9c310aca-a0e7-40d2-8d51-538d963158a0" />
-
-用户引导（风雪版）
+用户引导
 https://github.com/user-attachments/assets/723afa46-a555-411a-bb07-8e6af35a1729
 
 剧本预览
@@ -185,7 +178,7 @@ events:
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详情请查看 [LICENSE](LICENSE) 文件 （目前还不确定用啥license)
+本项目采用 MIT 许可证 - 详情请查看 [LICENSE](LICENSE) 文件
 
 ## 🙏 致谢
 
@@ -194,5 +187,5 @@ events:
 - 后端由 [FastAPI](https://fastapi.tiangolo.com/) 提供支持
 - 看到这里的你
 
-© LingChat 制作团队
+
 ---
