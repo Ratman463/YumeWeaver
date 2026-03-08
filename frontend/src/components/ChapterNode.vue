@@ -1,0 +1,312 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import draggable from 'vuedraggable'
+import { EVENT_SCHEMAS } from '../config/events'
+import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
+import ResourceSelector from './ResourceSelector.vue'
+
+const props = defineProps<{
+    chapterPath: string
+    events: any[]
+    x?: number
+    y?: number
+}>()
+
+const emit = defineEmits(['update:events', 'select', 'delete', 'add-event', 'toggle-expand', 'start-connection', 'end-connection', 'delete-event', 'swap-events', 'delete-chapter'])
+
+const localEvents = computed({
+    get: () => props.events,
+    set: (val) => emit('update:events', val)
+})
+
+const expandedEvents = ref<Record<number, boolean>>({})
+const showEventTypeDialog = ref(false)
+const showDeleteDialog = ref(false)
+
+function toggleEvent(index: number) {
+    if (expandedEvents.value[index]) {
+        delete expandedEvents.value[index]
+    } else {
+        expandedEvents.value[index] = true
+    }
+}
+
+function getEventSchema(type: string) {
+    return EVENT_SCHEMAS[type] || { label: type, color: 'border-gray-500 bg-gray-900', mandatory: [], optional: [] }
+}
+
+function addOptional(event: any, key: string, schema: any) {
+    const field = schema.optional.find((f: any) => f.key === key)
+    event[key] = field?.default ?? ''
+}
+
+function handleStartConnection(e: MouseEvent, side: 'left' | 'right') {
+    emit('start-connection', e, props.chapterPath, side)
+}
+
+function handleEndConnection(e: MouseEvent, side: 'left' | 'right') {
+    emit('end-connection', e, props.chapterPath, side)
+}
+
+function handleAddEvent() {
+    showEventTypeDialog.value = true
+}
+
+function selectEventType(type: string) {
+    console.log("select type:", type)
+    emit('add-event', type)
+    showEventTypeDialog.value = false
+}
+
+function getEventDescription(type: string): string {
+    const descriptions: Record<string, string> = {
+        narration: '添加叙述文本',
+        player: '添加玩家对话',
+        dialogue: '添加角色对话',
+        ai_dialogue: '添加AI生成对话',
+        modify_character: '修改角色状态',
+        background: '设置背景图片',
+        music: '播放背景音乐',
+        input: '玩家输入事件',
+        set_variable: '设置变量值',
+        end: '结束或跳转章节'
+    }
+    return descriptions[type] || '事件描述'
+}
+
+function onDragEnd(event: any) {
+    emit('swap-events', event.moved.oldIndex, event.moved.newIndex)
+}
+
+function confirmDelete() {
+    emit('delete-chapter')
+    showDeleteDialog.value = false
+}
+
+function cancelDelete() {
+    showDeleteDialog.value = false
+}
+</script>
+
+<template>
+  <div 
+    class="absolute w-80 rounded-xl border border-gray-700 bg-gray-900/90 shadow-2xl backdrop-blur flex flex-col overflow-visible"
+    :style="{ left: (x || 0) + 'px', top: (y || 0) + 'px' }"
+    @mousedown.stop="$emit('select', $event)"
+  >
+    <!-- Chapter Header -->
+    <div class="px-4 py-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between cursor-move handle">
+        <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+            <span class="font-bold text-sm text-gray-200 truncate max-w-[180px]" :title="chapterPath">{{ chapterPath }}</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <div class="text-[10px] text-gray-500">{{ events.length }} events</div>
+            <button @click="showDeleteDialog = true" class="ml-2 group-hover:opacity-100 transition-opacity bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded p-1" title="删除章节">
+                <svg class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Events List -->
+    <draggable 
+        v-model="localEvents" 
+        item-key="id" 
+        class="flex-1 overflow-y-auto max-h-[400px] min-h-[400px] p-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-700"
+        handle=".event-handle"
+        @change="onDragEnd"
+    >
+        <template #item="{ element, index }">
+            <div 
+                class="rounded border transition-all text-xs group"
+                :class="[getEventSchema(element.type).color, expandedEvents[index] ? 'bg-opacity-30' : 'bg-opacity-10']"
+            >
+                <!-- Compact Row -->
+                <div class="flex items-center p-2 cursor-pointer hover:bg-white/5 group" @click="toggleEvent(index)">
+                    <div class="event-handle cursor-move mr-2 opacity-0 group-hover:opacity-50 hover:opacity-100" @mousedown.stop>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+                    </div>
+                    
+                    <span class="font-bold uppercase opacity-70 mr-2 min-w-[60px] text-[10px]">{{ getEventSchema(element.type).label }}</span>
+                    
+                    <span class="truncate flex-1 opacity-90">
+                        {{ element.text || element.imagePath || element.musicPath || element.hint || element.action || (element.type === 'end' ? 'Go to ' + element.next : '') || '...' }}
+                    </span>
+
+                    <!-- Indicators -->
+                     <span v-if="element.condition" class="w-2 h-2 rounded-full bg-yellow-500 ml-2" title="Has Condition"></span>
+                    
+                    <!-- Delete Button -->
+                    <button 
+                        @click.stop="$emit('delete-event', index)"
+                        class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded p-1"
+                        title="Delete Event"
+                    >
+                        <svg class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Expanded Details -->
+                <div v-if="expandedEvents[index]" class="p-3 border-t border-white/10 space-y-3 bg-black/20 text-gray-300 cursor-default" @mousedown.stop>
+                     <!-- Mandatory Fields -->
+                     <div v-for="field in getEventSchema(element.type).mandatory" :key="field.key">
+                         <label class="block text-[10px] uppercase font-bold opacity-50 mb-1">{{ field.label }}</label>
+                         <textarea 
+                            v-if="field.type === 'textarea'" 
+                            v-model="element[field.key]" 
+                            class="w-full bg-black/30 border border-white/10 rounded p-2 focus:border-purple-500/50 outline-none text-xs"
+                         ></textarea>
+                         <select 
+                            v-else-if="field.type === 'select'"
+                            v-model="element[field.key]"
+                            class="w-full bg-black/30 border border-white/10 rounded p-1.5 focus:border-purple-500/50 outline-none text-xs"
+                         >
+                            <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt }}</option>
+                         </select>
+                         <ResourceSelector 
+                            v-else-if="field.type === 'file' && field.resourceType"
+                            v-model="element[field.key]"
+                            :resourceType="field.resourceType"
+                            :placeholder="'选择' + field.label"
+                         />
+                         <input 
+                            v-else
+                            v-model="element[field.key]"
+                            class="w-full bg-black/30 border border-white/10 rounded p-1.5 focus:border-purple-500/50 outline-none text-xs"
+                         />
+                     </div>
+
+                     <!-- Existing Optional Fields -->
+                     <div v-for="(val, key) in element" :key="key">
+                         <template v-if="getEventSchema(element.type).optional.find(f => f.key === key)">
+                            <div class="relative group/opt">
+                                <label class="block text-[10px] uppercase font-bold text-yellow-500/80 mb-1">{{ getEventSchema(element.type).optional.find(f => f.key === key)?.label }}</label>
+                                <div class="flex items-center">
+                                    <input v-model="element[key]" class="flex-1 bg-yellow-900/10 border border-yellow-500/20 rounded p-1.5 text-xs text-yellow-200 focus:outline-none focus:border-yellow-500/50" />
+                                    <button @click="delete element[key]" class="ml-2 text-gray-600 hover:text-red-400">x</button>
+                                </div>
+                            </div>
+                         </template>
+                     </div>
+
+                     <!-- Add Optional Button -->
+                     <div class="relative group/add inline-block mt-2">
+                         <button class="text-[10px] bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded border border-gray-700">+ Add Option</button>
+                         <div class="absolute top-full left-0 bg-gray-800 border border-gray-700 rounded shadow-lg z-20 hidden group-hover/add:block min-w-[120px]">
+                              <div 
+                                v-for="field in getEventSchema(element.type).optional.filter(f => element[f.key] === undefined)"
+                                :key="field.key"
+                                @click="addOptional(element, field.key, getEventSchema(element.type))"
+                                class="px-3 py-1.5 hover:bg-gray-700 text-xs cursor-pointer"
+                              >
+                                {{ field.label }}
+                              </div>
+                         </div>
+                     </div>
+                </div>
+            </div>
+        </template>
+    </draggable>
+
+    <!-- Footer -->
+    <div class="p-2 bg-gray-800/50 border-t border-gray-700">
+        <button @click="handleAddEvent" class="w-full py-1.5 rounded border border-dashed border-gray-600 text-gray-500 hover:text-purple-400 hover:border-purple-500/50 text-xs transition">+ Add Event</button>
+    </div>
+
+    <!-- Event Type Dialog -->
+    <div v-if="showEventTypeDialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
+            <div class="p-4 border-b border-gray-700">
+                <h3 class="text-lg font-bold text-gray-200">选择事件类型</h3>
+                <p class="text-sm text-gray-400 mt-1">选择要添加的事件类型</p>
+            </div>
+            
+            <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
+                <div 
+                    v-for="(schema, type) in EVENT_SCHEMAS" 
+                    :key="type"
+                    @click="selectEventType(type)"
+                    class="flex items-center p-3 rounded-lg border border-gray-700 hover:border-gray-600 cursor-pointer transition-all group"
+                    :class="schema.color"
+                >
+                    <div class="w-3 h-3 rounded-full mr-3" :class="schema.color.replace('bg-', 'bg-').replace('/20', '')"></div>
+                    <div class="flex-1">
+                        <div class="font-bold text-sm text-gray-200">{{ schema.label }}</div>
+                        <div class="text-xs text-gray-400">{{ getEventDescription(type) }}</div>
+                    </div>
+                    <div class="text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-700 flex justify-end">
+                <button 
+                    @click="showEventTypeDialog = false"
+                    class="px-4 py-2 text-gray-400 hover:text-gray-200 transition-colors"
+                >
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Handles -->
+    <!-- Left Handle -->
+    <div 
+        class="absolute left-[-4px] top-1/2 w-2 h-2 bg-white rounded-full border-2 border-gray-300 cursor-pointer hover:bg-purple-200 hover:border-purple-400 transform -translate-y-1/2 z-10"
+        @mousedown.stop="handleStartConnection($event, 'left')"
+        @mouseup.stop="handleEndConnection($event, 'left')"
+        title="连接终点"
+    ></div>
+    
+    <!-- Right Handle -->
+    <div 
+        class="absolute right-[-4px] top-1/2 w-2 h-2 bg-white rounded-full border-2 border-gray-300 cursor-pointer hover:bg-purple-200 hover:border-purple-400 transform -translate-y-1/2 z-10"
+        @mousedown.stop="handleStartConnection($event, 'right')"
+        @mouseup.stop="handleEndConnection($event, 'right')"
+        title="连接起点"
+    ></div>
+
+    <!-- Delete Confirmation Dialog -->
+    <div v-if="showDeleteDialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
+            <div class="p-4 border-b border-gray-700">
+                <h3 class="text-lg font-bold text-gray-200">确认删除章节</h3>
+                <p class="text-sm text-gray-400 mt-1">确定要删除章节 "{{ chapterPath }}" 吗？此操作无法撤销。</p>
+            </div>
+            
+            <div class="p-4 space-y-4">
+                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <span class="text-sm font-medium text-red-400">警告</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">删除后，该章节的所有事件将被永久移除。</p>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-700 flex justify-end space-x-3">
+                <button 
+                    @click="cancelDelete"
+                    class="px-4 py-2 text-gray-400 hover:text-gray-200 transition-colors border border-gray-600 rounded"
+                >
+                    取消
+                </button>
+                <button 
+                    @click="confirmDelete"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                >
+                    确定删除
+                </button>
+            </div>
+        </div>
+    </div>
+  </div>
+</template>
